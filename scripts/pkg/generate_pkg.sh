@@ -125,6 +125,7 @@ fpm --force \
     --before-remove $DIR/scripts/pre_remove.sh \
     --after-remove $DIR/scripts/post_remove.sh \
     --config-files /etc/$PRODUCT/$PRODUCT.yml \
+    --template-value product=$PRODUCT \
     --template-value user=$PRODUCT \
     --template-value group=$PRODUCT \
     #--template-value optimizeDir=/usr/share/ \
