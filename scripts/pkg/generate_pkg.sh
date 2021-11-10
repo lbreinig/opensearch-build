@@ -100,8 +100,10 @@ DIR=`realpath $DIRECTORY`
 echo "List content in $DIR for $PRODUCT $VERSION"
 mkdir -p $DIR/data
 ls -l $DIR
+ARCHITECTURE_FINAL=`eval echo '$'ARCHITECTURE_ALT_${TYPE}`
 
 fpm --force \
+    --verbose \
     --input-type dir \
     --package $ROOT/NAME-$VERSION.TYPE \
     --output-type $TYPE \
@@ -124,10 +126,8 @@ fpm --force \
     --template-value pluginsDir=/usr/share/$PRODUCT/plugins \
     --template-value dataDir=/usr/share/$PRODUCT/data \
     --exclude usr/share/$PRODUCT/config \
-    --exclude usr/share/$PRODUCT/data \
-    --architecture `eval echo '$'ARCHITECTURE_ALT_${type}` \
+    --architecture $ARCHITECTURE_FINAL \
     $DIR/=/usr/share/$PRODUCT/ \
     $DIR/config/=/etc/$PRODUCT/ \
     $DIR/data/=/usr/share/$PRODUCT/ \
     $ROOT/service_templates/systemd/etc/=/etc/
-
