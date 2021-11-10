@@ -43,6 +43,5 @@ case $1 in
   ;;
 esac
 
-chown -R <%= user %>:<%= group %> <%= optimizeDir %> || echo no optimize folder
 chown <%= user %>:<%= group %> <%= dataDir %>
 chown <%= user %>:<%= group %> <%= pluginsDir %>

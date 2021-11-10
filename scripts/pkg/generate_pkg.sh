@@ -7,11 +7,9 @@
 # compatible open source license.
 
 # This script is used to generate pkgs by using fpm
+# It does not run by itself and required to be executed by `./assemble.sh <builds manifest file> --distribution deb/rpm`
 
 set -e
-
-# Load libs
-. ../../lib/shell/file_management.sh
 
 # Setup root
 ROOT=`dirname $(realpath $0)`; echo $ROOT; cd $ROOT
@@ -27,15 +25,14 @@ function usage() {
     echo -e "-t TYPE\tSpecify the package type, e.g. rpm/deb/pkg."
     echo -e "-p PRODUCT\tSpecify the package product, e.g. opensearch / opensearch_dashboards, etc."
     echo -e "-a ARCHITECTURE\tSpecify the package architecture, e.g. x64 or arm64."
-    echo -e "-i INPUT_ARTIFACT\tSpecify \$PRODUCT tarball artifact, as the script will extract it and put files in corresponding folder."
-    echo -e "-d DESCRIPTION\tSpecify the package description, e.g. Open source distributed and RESTful search engine."
+    echo -e "-d DIRECTORY\tSpecify directory of the content that fpm can use to pack into a pkg."
     echo ""
     echo "Optional arguments:"
     echo -e "-h\t\tPrint this message."
     echo "--------------------------------------------------------------------------"
 }
 
-while getopts ":hv:t:p:a:i:d:" arg; do
+while getopts ":hv:t:p:a:d:" arg; do
     case $arg in
         h)
             usage
@@ -53,11 +50,8 @@ while getopts ":hv:t:p:a:i:d:" arg; do
         a)
             ARCHITECTURE=$OPTARG
             ;;
-        i)
-            INPUT_ARTIFACT=$OPTARG
-            ;;
         d)
-            DESCRIPTION=$OPTARG
+            DIRECTORY=$OPTARG
             ;;
         :)
             echo "-${OPTARG} requires an argument"
@@ -72,12 +66,12 @@ while getopts ":hv:t:p:a:i:d:" arg; do
 done
 
 # Check parameters
-if [ -z "$VERSION" ] || [ -z "$TYPE" ] || [ -z "$PRODUCT" ] || [ -z "$ARCHITECTURE" ] || [ -z "$INPUT_ARTIFACT" ] || [ -z "$DESCRIPTION" ]
+if [ -z "$VERSION" ] || [ -z "$TYPE" ] || [ -z "$PRODUCT" ] || [ -z "$ARCHITECTURE" ] || [ -z "$DIRECTORY" ]
 then
-    echo "You must specify '-v VERSION', '-t TYPE', '-p PRODUCT', '-a APRODUCTRCHITECTURE', '-i INPUT_ARTIFACT', '-d DESCRIPTION'"
+    echo "You must specify '-v VERSION', '-t TYPE', '-p PRODUCT', '-a APRODUCTRCHITECTURE', '-d DIRECTORY'"
     exit 1
 else
-    echo $VERSION $TYPE $PRODUCT $ARCHITECTURE $INPUT_ARTIFACT $DESCRIPTION
+    echo $VERSION $TYPE $PRODUCT $ARCHITECTURE $DIRECTORY
 fi
 
 # Check architecture
@@ -102,43 +96,38 @@ then
 fi
 
 # Setup cleanups
-DIR=`Temp_Folder_Create`
-Trap_File_Delete_No_Sigchld $DIR
-echo Create Work Directory: $DIR
-echo Extract $INPUT_ARTIFACT
-tar -xzf $INPUT_ARTIFACT --strip-components 1 --directory $DIR/
+DIR=`realpath $DIRECTORY`
+echo "List content in $DIR for $PRODUCT $VERSION"
+mkdir -p $DIR/data
 ls -l $DIR
 
 fpm --force \
     --input-type dir \
+    --package $ROOT/NAME-$VERSION.TYPE \
     --output-type $TYPE \
-    #--package $TARGET_DIR/NAME-$OD_VERSION.TYPE \
     --name $PRODUCT \
-    --description "$DESCRIPTION" \
+    --description "$PRODUCT $TYPE $VERSION" \
     --version $VERSION \
     --url https://opensearch.org/ \
     --vendor "OpenSearch" \
     --maintainer "OpenSearch" \
     --license "ASL 2.0" \
-    --after-install $DIR/scripts/post_install.sh \
-    --before-install $DIR/scripts/pre_install.sh \
-    --before-remove $DIR/scripts/pre_remove.sh \
-    --after-remove $DIR/scripts/post_remove.sh \
+    --after-install $ROOT/scripts/post_install.sh \
+    --before-install $ROOT/scripts/pre_install.sh \
+    --before-remove $ROOT/scripts/pre_remove.sh \
+    --after-remove $ROOT/scripts/post_remove.sh \
     --config-files /etc/$PRODUCT/$PRODUCT.yml \
     --template-value product=$PRODUCT \
     --template-value user=$PRODUCT \
     --template-value group=$PRODUCT \
-    #--template-value optimizeDir=/usr/share/ \
     --template-value configDir=/etc/$PRODUCT \
     --template-value pluginsDir=/usr/share/$PRODUCT/plugins \
     --template-value dataDir=/usr/share/$PRODUCT/data \
     --exclude usr/share/$PRODUCT/config \
     --exclude usr/share/$PRODUCT/data \
     --architecture `eval echo '$'ARCHITECTURE_ALT_${type}` \
-    --rpm-os linux \
     $DIR/=/usr/share/$PRODUCT/ \
     $DIR/config/=/etc/$PRODUCT/ \
     $DIR/data/=/usr/share/$PRODUCT/ \
-    $DIR/service_templates/sysv/etc/=/etc/ \
-    $DIR/service_templates/systemd/etc/=/etc/
+    $ROOT/service_templates/systemd/etc/=/etc/
 
