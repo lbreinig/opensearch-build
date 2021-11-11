@@ -8,6 +8,7 @@
 
 # This script is used to generate pkgs by using fpm
 # It does not run by itself and required to be executed by `./assemble.sh <builds manifest file> --distribution deb/rpm`
+# As of now it only supports building packages correctly on LINUX host for deb/rpm.
 
 set -e
 
