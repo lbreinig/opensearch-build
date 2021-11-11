@@ -23,17 +23,19 @@ function usage() {
     echo ""
     echo "Required arguments:"
     echo -e "-v VERSION\tSpecify the package version number, e.g. 1.1.0"
-    echo -e "-t TYPE\tSpecify the package type, e.g. rpm/deb/pkg."
+    echo -e "-t TYPE\tSpecify the package type, e.g. deb/rpm."
     echo -e "-p PRODUCT\tSpecify the package product, e.g. opensearch / opensearch_dashboards, etc."
     echo -e "-a ARCHITECTURE\tSpecify the package architecture, e.g. x64 or arm64."
-    echo -e "-d DIRECTORY\tSpecify directory of the content that fpm can use to pack into a pkg."
+    echo -e "-i INPUT_DIR\tSpecify output directory of the content that fpm can use to generate a pkg."
     echo ""
     echo "Optional arguments:"
+    echo -e "-o OUTPUT_DIR\tSpecify output directory of that fpm can use to output the generated pkg. Defaults to \$ROOT if not set specifically."
+    echo -e "-n NAME\tSpecify package name, defaults to \$PRODUCT-\$VERSION.\$TYPE."
     echo -e "-h\t\tPrint this message."
     echo "--------------------------------------------------------------------------"
 }
 
-while getopts ":hv:t:p:a:d:" arg; do
+while getopts ":hv:t:p:a:i:o:" arg; do
     case $arg in
         h)
             usage
@@ -51,8 +53,14 @@ while getopts ":hv:t:p:a:d:" arg; do
         a)
             ARCHITECTURE=$OPTARG
             ;;
-        d)
-            DIRECTORY=$OPTARG
+        i)
+            INPUT_DIR=$OPTARG
+            ;;
+        o)
+            OUTPUT_DIR=$OPTARG
+            ;;
+        n)
+            NAME=$OPTARG
             ;;
         :)
             echo "-${OPTARG} requires an argument"
@@ -67,12 +75,12 @@ while getopts ":hv:t:p:a:d:" arg; do
 done
 
 # Check parameters
-if [ -z "$VERSION" ] || [ -z "$TYPE" ] || [ -z "$PRODUCT" ] || [ -z "$ARCHITECTURE" ] || [ -z "$DIRECTORY" ]
+if [ -z "$VERSION" ] || [ -z "$TYPE" ] || [ -z "$PRODUCT" ] || [ -z "$ARCHITECTURE" ] || [ -z "$INPUT_DIR" ]
 then
-    echo "You must specify '-v VERSION', '-t TYPE', '-p PRODUCT', '-a APRODUCTRCHITECTURE', '-d DIRECTORY'"
+    echo "You must specify '-v VERSION', '-t TYPE', '-p PRODUCT', '-a ARCHITECTURE', '-i INPUT_DIR'"
     exit 1
 else
-    echo $VERSION $TYPE $PRODUCT $ARCHITECTURE $DIRECTORY
+    echo $VERSION $TYPE $PRODUCT $ARCHITECTURE $INPUT_DIR
 fi
 
 # Check architecture
@@ -89,6 +97,13 @@ else
     exit 1
 fi
 
+# Check type
+if [ "$TYPE" != "deb" ] && [ "$TYPE" != "rpm" ]
+then
+    echo "User enter wrong pkg type, choose among deb/rpm"
+    exit 1
+fi
+
 # Check product
 if [ "$PRODUCT" != "opensearch" ] && [ "$PRODUCT" != "opensearch_dashboards" ]
 then
@@ -96,17 +111,27 @@ then
     exit 1
 fi
 
-# Setup cleanups
-DIR=`realpath $DIRECTORY`
+if [ -z "$OUTPUT_DIR" ]
+then
+    OUTPUT_DIR=$ROOT
+fi
+
+if [ -z "$NAME" ]
+then
+    NAME=NAME-$VERSION.TYPE
+fi
+
+# Setup directory
+DIR=`realpath $INPUT_DIR`
 echo "List content in $DIR for $PRODUCT $VERSION"
-mkdir -p $DIR/data
+cp -v scripts/systemd-entrypoint $DIR/bin/systemd-entrypoint
 ls -l $DIR
 ARCHITECTURE_FINAL=`eval echo '$'ARCHITECTURE_ALT_${TYPE}`
 
 fpm --force \
     --verbose \
     --input-type dir \
-    --package $ROOT/NAME-$VERSION.TYPE \
+    --package $OUTPUT_DIR/$NAME \
     --output-type $TYPE \
     --name $PRODUCT \
     --description "$PRODUCT $TYPE $VERSION" \
@@ -115,20 +140,22 @@ fpm --force \
     --vendor "OpenSearch" \
     --maintainer "OpenSearch" \
     --license "ASL 2.0" \
-    --after-install $ROOT/scripts/post_install.sh \
     --before-install $ROOT/scripts/pre_install.sh \
     --before-remove $ROOT/scripts/pre_remove.sh \
+    --after-install $ROOT/scripts/post_install.sh \
     --after-remove $ROOT/scripts/post_remove.sh \
     --config-files /etc/$PRODUCT/$PRODUCT.yml \
     --template-value product=$PRODUCT \
     --template-value user=$PRODUCT \
     --template-value group=$PRODUCT \
+    --template-value homeDir=/usr/share/$PRODUCT \
     --template-value configDir=/etc/$PRODUCT \
     --template-value pluginsDir=/usr/share/$PRODUCT/plugins \
-    --template-value dataDir=/usr/share/$PRODUCT/data \
+    --template-value dataDir=/var/lib/$PRODUCT \
+    --exclude usr/share/$PRODUCT/data \
     --exclude usr/share/$PRODUCT/config \
     --architecture $ARCHITECTURE_FINAL \
     $DIR/=/usr/share/$PRODUCT/ \
     $DIR/config/=/etc/$PRODUCT/ \
     $DIR/data/=/usr/share/$PRODUCT/ \
-    $ROOT/service_templates/systemd/etc/=/etc/
+    $ROOT/service_templates/$PRODUCT/systemd/etc/=/etc/

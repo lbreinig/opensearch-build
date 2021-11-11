@@ -45,3 +45,45 @@ esac
 
 chown <%= user %>:<%= group %> <%= dataDir %>
 chown <%= user %>:<%= group %> <%= pluginsDir %>
+
+
+############ Additional Plugins Settings ############
+
+OPENSEARCH_HOME="<=% homeDir =>"
+
+function securitySettings() {
+    echo Apply Security Settings
+    exec /bin/sh $OPENSEARCH_HOME/plugins/opensearch-security/tools/install_demo_configuration.sh -y -i -s
+}
+
+function performanceAnalyzerSettings() {
+    echo Apply PerformanceAnalyzer Settings
+    mkdir -p "$OPENSEARCH_HOME"/data
+    mkdir -p "/var/lib/opensearch"
+    touch "$OPENSEARCH_HOME"/data/rca_enabled.conf
+    echo 'true' > "$OPENSEARCH_HOME"/data/rca_enabled.conf
+    echo 'true' > /var/lib/opensearch/performance_analyzer_enabled.conf
+    echo 'true' > /var/lib/opensearch/rca_enabled.conf
+    chown opensearch /var/lib/opensearch/performance_analyzer_enabled.conf
+    chown opensearch /var/lib/opensearch/rca_enabled.conf
+    chown -R opensearch "$OPENSEARCH_HOME/performance-analyzer-rca"
+    chmod a+rw /tmp
+    
+    if ! grep -q '## OpenSearch Performance Analyzer' /etc/opensearch/jvm.options; then
+       CLK_TCK=`/usr/bin/getconf CLK_TCK`
+       echo >> /etc/opensearch/jvm.options
+       echo '## OpenSearch Performance Analyzer' >> /etc/opensearch/jvm.options
+       echo "-Dclk.tck=$CLK_TCK" >> /etc/opensearch/jvm.options
+       echo "-Djdk.attach.allowAttachSelf=true" >> /etc/opensearch/jvm.options
+       echo "-Djava.security.policy=file:///usr/share/opensearch/plugins/opensearch-performance-analyzer/pa_config/opensearch_security.policy" >> /etc/opensearch/jvm.options
+    fi
+
+}
+
+if [ "<%= product %>" = "opensearch" ]
+then
+    echo Product is OpenSearch, apply plugin settings
+    securitySettings
+    performanceAnalyzerSettings
+    
+fi

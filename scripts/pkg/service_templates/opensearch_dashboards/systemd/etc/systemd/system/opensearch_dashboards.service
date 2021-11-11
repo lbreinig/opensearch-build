@@ -21,7 +21,7 @@ EnvironmentFile=-/etc/default/opensearch_dashboards
 EnvironmentFile=-/etc/sysconfig/opensearch_dashboards
 ExecStart=/usr/share/opensearch_dashboards/bin/opensearch_dashboards "-c /etc/opensearch_dashboards/opensearch_dashboards.yml"
 Restart=always
-WorkingDirectory=/
+WorkingDirectory=/usr/share/opensearch_dashboards
 
 [Install]
 WantedBy=multi-user.target
