@@ -80,7 +80,7 @@ then
     echo "You must specify '-v VERSION', '-t TYPE', '-p PRODUCT', '-a ARCHITECTURE', '-i INPUT_DIR'"
     exit 1
 else
-    echo $VERSION $TYPE $PRODUCT $ARCHITECTURE $INPUT_DIR
+    echo $VERSION $TYPE $PRODUCT $ARCHITECTURE $INPUT_DIR $OUTPUT_DIR $NAME
 fi
 
 # Check architecture
