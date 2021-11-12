@@ -23,7 +23,7 @@ function usage() {
     echo ""
     echo "Required arguments:"
     echo -e "-v VERSION\tSpecify the package version number, e.g. 1.1.0"
-    echo -e "-t TYPE\tSpecify the package type, e.g. deb/rpm."
+    echo -e "-t TYPE\t\tSpecify the package type, e.g. deb/rpm."
     echo -e "-p PRODUCT\tSpecify the package product, e.g. opensearch / opensearch_dashboards, etc."
     echo -e "-a ARCHITECTURE\tSpecify the package architecture, e.g. x64 or arm64."
     echo -e "-i INPUT_DIR\tSpecify output directory of the content that fpm can use to generate a pkg."
@@ -124,6 +124,7 @@ fi
 # Setup directory
 DIR=`realpath $INPUT_DIR`
 echo "List content in $DIR for $PRODUCT $VERSION"
+mkdir -p $DIR/data/
 cp -v scripts/systemd-entrypoint $DIR/bin/systemd-entrypoint
 ls -l $DIR
 ARCHITECTURE_FINAL=`eval echo '$'ARCHITECTURE_ALT_${TYPE}`
@@ -157,5 +158,5 @@ fpm --force \
     --architecture $ARCHITECTURE_FINAL \
     $DIR/=/usr/share/$PRODUCT/ \
     $DIR/config/=/etc/$PRODUCT/ \
-    $DIR/data/=/usr/share/$PRODUCT/ \
+    $DIR/data/=/var/lib/$PRODUCT/ \
     $ROOT/service_templates/$PRODUCT/systemd/etc/=/etc/
