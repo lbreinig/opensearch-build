@@ -35,7 +35,7 @@ function usage() {
     echo "--------------------------------------------------------------------------"
 }
 
-while getopts ":hv:t:p:a:i:o:" arg; do
+while getopts ":hv:t:p:a:i:o:n:" arg; do
     case $arg in
         h)
             usage
