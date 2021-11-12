@@ -139,7 +139,6 @@ RUN pip3 install cmake==3.21.3
 USER 1000
 WORKDIR /usr/share/opensearch
 
-
 # Hard code node version and yarn version for now
 # nvm environment variables
 ENV NVM_DIR /usr/share/opensearch/.nvm
