@@ -49,7 +49,9 @@ chown <%= user %>:<%= group %> <%= pluginsDir %>
 
 ############ Additional Plugins Settings ############
 
-OPENSEARCH_HOME="<=% homeDir =>"
+OPENSEARCH_HOME=<=% homeDir =>
+OPENSEARCH_DATA_DIR=<%= dataDir %>
+OPENSEARCH_CONFIG_DIR=<%= configDir %>
 
 function securitySettings() {
     echo Apply Security Settings
@@ -58,24 +60,29 @@ function securitySettings() {
 
 function performanceAnalyzerSettings() {
     echo Apply PerformanceAnalyzer Settings
-    mkdir -p "$OPENSEARCH_HOME"/data
-    mkdir -p "/var/lib/opensearch"
-    touch "$OPENSEARCH_HOME"/data/rca_enabled.conf
+    mkdir -p $OPENSEARCH_HOME/data
+    mkdir -p $OPENSEARCH_CONFIG_DIR
     echo 'true' > "$OPENSEARCH_HOME"/data/rca_enabled.conf
-    echo 'true' > /var/lib/opensearch/performance_analyzer_enabled.conf
-    echo 'true' > /var/lib/opensearch/rca_enabled.conf
-    chown opensearch /var/lib/opensearch/performance_analyzer_enabled.conf
-    chown opensearch /var/lib/opensearch/rca_enabled.conf
-    chown -R opensearch "$OPENSEARCH_HOME/performance-analyzer-rca"
+    echo 'true' > $OPENSEARCH_CONFIG_DIR/performance_analyzer_enabled.conf
+    echo 'true' > $OPENSEARCH_CONFIG_DIR/rca_enabled.conf
+    chown -R <%= user %>:<%= group %> $OPENSEARCH_HOME
+    chown -R <%= user %>:<%= group %> $OPENSEARCH_CONFIG_DIR
     chmod a+rw /tmp
     
-    if ! grep -q '## OpenSearch Performance Analyzer' /etc/opensearch/jvm.options; then
+    if ! grep -q '## OpenSearch Performance Analyzer' $OPENSEARCH_CONFIG_DIR/jvm.options; then
+       echo Add Performance Analyzer settings in $OPENSEARCH_CONFIG_DIR/jvm.options
        CLK_TCK=`/usr/bin/getconf CLK_TCK`
-       echo >> /etc/opensearch/jvm.options
-       echo '## OpenSearch Performance Analyzer' >> /etc/opensearch/jvm.options
-       echo "-Dclk.tck=$CLK_TCK" >> /etc/opensearch/jvm.options
-       echo "-Djdk.attach.allowAttachSelf=true" >> /etc/opensearch/jvm.options
-       echo "-Djava.security.policy=file:///usr/share/opensearch/plugins/opensearch-performance-analyzer/pa_config/opensearch_security.policy" >> /etc/opensearch/jvm.options
+       echo >> $OPENSEARCH_CONFIG_DIR/jvm.options
+       echo '## OpenSearch Performance Analyzer' >> $OPENSEARCH_CONFIG_DIR/jvm.options
+       echo "-Dclk.tck=$CLK_TCK" >> $OPENSEARCH_CONFIG_DIR/jvm.options
+       echo "-Djdk.attach.allowAttachSelf=true" >> $OPENSEARCH_CONFIG_DIR/jvm.options
+       echo "-Djava.security.policy=file:///usr/share/opensearch/plugins/opensearch-performance-analyzer/pa_config/opensearch_security.policy" >> $OPENSEARCH_CONFIG_DIR/jvm.options
+    fi
+
+    if command -v systemctl > /dev/null; then
+        echo '# Enabling OpenSearch performance analyzer to start and stop along with opensearch.service'
+        systemctl daemon-reload
+        systemctl enable opensearch-performance-analyzer.service || true
     fi
 
 }

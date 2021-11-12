@@ -55,8 +55,8 @@ fi
 
 if [ "$REMOVE_DIRS" = "true" ]; then
 
-  if [ -d "<%= pluginsDir %>" ]; then
-    rm -rf "<%= pluginsDir %>"
+  if [ -d "<%= homeDir %>" ]; then
+    rm -rf "<%= homeDir %>"
   fi
 
   if [ -d "<%= configDir %>" ]; then
