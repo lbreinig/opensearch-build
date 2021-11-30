@@ -1,25 +1,5 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
-# 
-# The OpenSearch Contributors require contributions made to
-# this file be licensed under the Apache-2.0 license or a
-# compatible open source license.
-# 
-# Modifications Copyright OpenSearch Contributors. See
-# GitHub history for details.
- 
- 
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# 
-# Licensed under the Apache License, Version 2.0 (the "License").
-# You may not use this file except in compliance with the License.
-# A copy of the License is located at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# or in the "license" file accompanying this file. This file is distributed 
-# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
-# express or implied. See the License for the specific language governing 
-# permissions and limitations under the License.
 
 
 # This dockerfile generates an AmazonLinux-based image containing an OpenSearch-Dashboards installation.
@@ -36,6 +16,7 @@ FROM amazonlinux:2 AS linux_stage_0
 
 ARG UID=1000
 ARG GID=1000
+ARG TEMP_DIR=/tmp/opensearch-dashboards
 ARG OPENSEARCH_DASHBOARDS_HOME=/usr/share/opensearch-dashboards
 
 # Update packages
@@ -46,13 +27,15 @@ RUN yum update -y && yum install -y tar gzip shadow-utils which && yum clean all
 # Create an opensearch-dashboards user, group, and directory
 RUN groupadd -g $GID opensearch-dashboards && \
     adduser -u $UID -g $GID -d $OPENSEARCH_DASHBOARDS_HOME opensearch-dashboards && \
-    mkdir /tmp/opensearch-dashboards
+    mkdir $TEMP_DIR
 
 # Prepare working directory
-COPY opensearch-dashboards-*.tgz /tmp/opensearch-dashboards/
-RUN tar -xzpf /tmp/opensearch-dashboards/opensearch-dashboards-`uname -p`.tgz -C $OPENSEARCH_DASHBOARDS_HOME --strip-components=1 && rm -rf /tmp/opensearch-dashboards
-COPY opensearch-dashboards-docker-entrypoint.sh $OPENSEARCH_DASHBOARDS_HOME/
-COPY opensearch_dashboards.yml opensearch.example.org.* $OPENSEARCH_DASHBOARDS_HOME/config/
+COPY * $TEMP_DIR
+RUN tar -xzpf $TEMP_DIR/opensearch-dashboards-`uname -p`.tgz -C $OPENSEARCH_DASHBOARDS_HOME --strip-components=1 && \
+    cp -v $TEMP_DIR/opensearch-dashboards-docker-entrypoint.sh $OPENSEARCH_DASHBOARDS_HOME/ && \
+    cp -v $TEMP_DIR/opensearch_dashboards.yml $TEMP_DIR/opensearch.example.org.* $OPENSEARCH_DASHBOARDS_HOME/config/ && \
+    ls -l $OPENSEARCH_DASHBOARDS_HOME && \
+    rm -rf $TEMP_DIR
 
 ########################### Stage 1 ########################
 # Copy working directory to the actual release docker images
@@ -67,7 +50,7 @@ ARG OPENSEARCH_DASHBOARDS_HOME=/usr/share/opensearch-dashboards
 # Install which to allow running of securityadmin.sh
 RUN yum update -y && yum install -y tar gzip shadow-utils which && yum clean all
 
-# Install notebooks dependencies
+# Install Reporting dependencies
 RUN yum install -y libnss3.so xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-utils xorg-x11-fonts-cyrillic xorg-x11-fonts-Type1 xorg-x11-fonts-misc fontconfig freetype && yum clean all
 
 # Create an opensearch-dashboards user, group

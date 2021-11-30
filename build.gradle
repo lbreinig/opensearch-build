@@ -16,9 +16,9 @@
 
 plugins {
     id 'com.mkobit.jenkins.pipelines.shared-library' version '0.10.1'
-    id 'jacoco'
     id 'java'
     id 'groovy'
+    id 'jacoco'
 }
 
 repositories {
@@ -30,9 +30,11 @@ repositories {
 }
 
 dependencies {
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.21'
     compile group: 'org.assertj', name: 'assertj-core', version: '3.4.1'
-    compile group: 'com.lesfurets', name:'jenkins-pipeline-unit', version: '1.7'
+    compile group: 'com.lesfurets', name:'jenkins-pipeline-unit', version: '1.12'
     compile group: 'com.cloudbees', name: 'groovy-cps', version: '1.12'
+    compile group: 'org.yaml', name: 'snakeyaml', version: '1.29'
 }
 
 sourceSets {
@@ -65,5 +67,44 @@ sharedLibrary {
     pluginDependencies {
         workflowCpsGlobalLibraryPluginVersion = '2.16'
         dependency('org.jenkins-ci.plugins', 'pipeline-input-step', '2.8')
+    }
+}
+
+test {
+    if (project.hasProperty("pipeline.stack.write")) {
+        systemProperty "pipeline.stack.write", project.getProperty("pipeline.stack.write")
+    }
+
+    jacoco {
+        classDumpDir = file("$buildDir/jacoco/classpathdumps")
+    }
+
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.7"
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    sourceSets sourceSets.main
+
+    afterEvaluate {
+        classDirectories.from = fileTree(
+            dir: "$buildDir/jacoco/classpathdumps",
+            includes: [
+                '**/*_Jenkinsfile.*',
+                '**/jenkins/*'
+            ],
+            excludes: [
+                '**/*\$_get_closure*'
+            ]
+        )
+    }
+
+    reports {
+        xml.required = true
     }
 }

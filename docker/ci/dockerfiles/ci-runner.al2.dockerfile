@@ -35,7 +35,7 @@ RUN yum install -y xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GC
 RUN yum install -y libnss3.so xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-utils xorg-x11-fonts-cyrillic xorg-x11-fonts-Type1 xorg-x11-fonts-misc fontconfig freetype && yum clean all
 
 # Add k-NN Library dependencies
-RUN yum install epel-release -y && yum repolist && yum install openblas-static lapack -y
+RUN amazon-linux-extras install epel -y && yum install openblas-static lapack -y
 RUN pip3 install cmake==3.21.3
 
 # Add Yarn dependencies
@@ -107,7 +107,11 @@ SHELL ["/bin/bash", "-lc"]
 CMD ["/bin/bash", "-l"]
 
 # Install ruby / rpm / fpm related dependencies
+<<<<<<< HEAD
 RUN . /etc/profile.d/rvm.sh && rvm install 2.3.3 && rvm --default use 2.3.3 && \
+=======
+RUN . /etc/profile.d/rvm.sh && rvm install 2.4.0 && rvm --default use 2.4.0 && \
+>>>>>>> lbreinig/main
     yum install -y rpm-build && \
     gem install fpm -v 1.13.0
 
