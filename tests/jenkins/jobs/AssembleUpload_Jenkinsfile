@@ -1,0 +1,14 @@
+pipeline {
+    agent none
+    stages {
+        stage('assemble and upload') {
+            steps {
+                script {
+                    assembleUpload(
+                        manifest: 'tests/data/opensearch-build-1.1.0.yml',
+                    )
+                }
+            }
+        }
+    }
+}

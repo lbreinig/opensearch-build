@@ -1,5 +1,6 @@
 Map call(Map args = [:]) {
     String manifest = args.manifest ?: "manifests/${INPUT_MANIFEST}"
+    String jobName = args.jobName ?: "${JOB_NAME}"
 
     buildManifest(
         args + [
@@ -8,14 +9,16 @@ Map call(Map args = [:]) {
         ]
     )
 
-    String manifestLock = args.dryRun ? manifest : "${manifest}.lock"
+    String manifestLock = "${manifest}.lock"
     String manifestSHA = sha1(manifestLock)
     echo "Manifest SHA: ${manifestSHA}"
 
     def lib = library(identifier: 'jenkins@20211123', retriever: legacySCM(scm))
     def inputManifest = lib.jenkins.InputManifest.new(readYaml(file: manifestLock))
-    String shasRoot = inputManifest.getSHAsRoot("${JOB_NAME}", args.platform, args.architecture)
+    String shasRoot = inputManifest.getSHAsRoot(jobName)
     String manifestSHAPath = "${shasRoot}/${manifestSHA}.yml"
+    echo "Manifest lock: ${manifestLock}"
+    echo "Manifest SHA path: ${manifestSHAPath}"
 
     Boolean manifestSHAExists = false
     withAWS(role: 'opensearch-bundle', roleAccount: "${AWS_ACCOUNT_PUBLIC}", duration: 900, roleSessionName: 'jenkins-session') {
@@ -23,6 +26,8 @@ Map call(Map args = [:]) {
             manifestSHAExists = true
         }
     }
+
+    echo "Manifest SHA exists: ${manifestSHAExists}"
 
     return [
         sha: manifestSHA,

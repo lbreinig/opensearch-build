@@ -5,7 +5,6 @@ pipeline {
     parameters {
         string(
             name: 'INPUT_MANIFEST',
-            defaultValue: '2.0.0/opensearch-2.0.0.yml',
             description: 'Input manifest under the manifests folder, e.g. 2.0.0/opensearch-2.0.0.yml.',
             trim: true
         )
@@ -20,14 +19,14 @@ pipeline {
                 }
             }
             steps {
-                script {
+                script { 
                     dockerAgent = detectDockerAgent()
                 }
             }
         }
         stage('build') {
             parallel {
-                stage('build-snapshots') {
+                stage('build-snapshot') {
                     environment {
                         SNAPSHOT_REPO_URL = "https://aws.oss.sonatype.org/content/repositories/snapshots/"
                     }
@@ -41,18 +40,22 @@ pipeline {
                     }
                     steps {
                         script {
+                            git url: 'https://github.com/opensearch-project/opensearch-build.git', branch: 'main'
                             buildManifest(
-                                dryRun: true,
                                 snapshot: true
                             )
-                            withCredentials([usernamePassword(credentialsId: 'Sonatype', usernameVariable: 'SONATYPE_USERNAME', passwordVariable: 'SONATYPE_PASSWORD')]) {
-                                echo "$WORKSPACE/publish/publish-snapshot.sh $WORKSPACE/builds/opensearch/maven"
+                            if (fileExists("$WORKSPACE/builds/opensearch/maven")) {
+                                withCredentials([usernamePassword(credentialsId: 'Sonatype', usernameVariable: 'SONATYPE_USERNAME', passwordVariable: 'SONATYPE_PASSWORD')]) {
+                                    sh('$WORKSPACE/publish/publish-snapshot.sh $WORKSPACE/builds/opensearch/maven')
+                                }
+                            } else {
+                                echo "Skipping publishing snapshots, builds/opensearch/maven does not exist."
                             }
                         }
                     }
-                    post() {
+                    post {
                         always {
-                            cleanWs disableDeferredWipeout: true, deleteDirs: true
+                            postCleanup()
                         }
                     }
                 }
@@ -67,17 +70,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            buildAssembleUpload(
-                                dryRun: true,
-                                platform: 'linux',
-                                architecture: 'x64'
-                            )
-                            uploadTestResults(
-                                dryRun: true,
-                                manifest: 'tests/data/opensearch-build-1.1.0.yml',
-                                jobName: "vars-build",
-                                buildNumber: "33"
-                            )
+                            buildAssembleUpload()
                         }
                     }
                     post {
@@ -97,17 +90,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            buildAssembleUpload(
-                                dryRun: true,
-                                platform: 'linux',
-                                architecture: 'arm64'
-                            )
-                            uploadTestResults(
-                                dryRun: true,
-                                manifest: 'tests/data/opensearch-build-1.1.0.yml',
-                                jobName: 'bundle-build',
-                                buildNumber: '1073'
-                            )
+                            buildAssembleUpload()
                         }
                     }
                     post {
@@ -122,7 +105,7 @@ pipeline {
             steps {
                 node('Jenkins-Agent-al2-x64-c54xlarge-Docker-Host') {
                     script {
-                        buildDockerImage(dryRun: true)
+                        buildDockerImage()
                     }
                 }
             }
@@ -133,19 +116,16 @@ pipeline {
             node('Jenkins-Agent-al2-x64-c54xlarge-Docker-Host') {
                 script {
                     def stashed = lib.jenkins.Messages.new(this).get(['build-x64', 'build-arm64'])
+
                     publishNotification(
-                        dryRun: true,
                         icon: ':white_check_mark:',
                         message: 'Successful Build',
+                        extra: stashed,
                         credentialsId: 'BUILD_NOTICE_WEBHOOK',
-                        manifest: "${INPUT_MANIFEST}",
-                        extra: stashed
+                        manifest: "${INPUT_MANIFEST}"
                     )
 
-                    cleanWs(
-                        disableDeferredWipeout: true,
-                        deleteDirs: true
-                    )
+                    postCleanup()
                 }
             }
         }
@@ -153,17 +133,13 @@ pipeline {
             node('Jenkins-Agent-al2-x64-c54xlarge-Docker-Host') {
                 script {
                     publishNotification(
-                        dryRun: true,
                         icon: ':warning:',
                         message: 'Failed Build',
                         credentialsId: 'BUILD_NOTICE_WEBHOOK',
                         manifest: "${INPUT_MANIFEST}"
                     )
 
-                    cleanWs(
-                        disableDeferredWipeout: true,
-                        deleteDirs: true
-                    )
+                    postCleanup()
                 }
             }
         }

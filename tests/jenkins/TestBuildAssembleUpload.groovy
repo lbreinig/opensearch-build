@@ -10,6 +10,7 @@ package jenkins.tests
 
 import org.junit.*
 import java.util.*
+import java.nio.file.*
 
 class TestBuildAssembleUpload extends BuildPipelineTest {
     @Before
@@ -29,10 +30,6 @@ class TestBuildAssembleUpload extends BuildPipelineTest {
             return helper.callClosure(closure)
         })
 
-        helper.registerAllowedMethod("sha1", [String], { filename ->
-            return 'sha1'
-        })
-
         helper.registerAllowedMethod("s3Upload", [Map])
         helper.registerAllowedMethod("withAWS", [Map, Closure], { args, closure ->
             closure.delegate = delegate
@@ -43,26 +40,11 @@ class TestBuildAssembleUpload extends BuildPipelineTest {
     }
 
     @Test
-    public void testIncremental() {
+    public void testJenkinsfile() {
         helper.registerAllowedMethod("s3DoesObjectExist", [Map], { args ->
             return true
         })
 
-        super.testPipeline(
-            "tests/jenkins/jobs/BuildAssembleUpload_Jenkinsfile",
-            "tests/jenkins/jobs/BuildAssembleUpload_Jenkinsfile_incremental"
-        )
-    }
-
-    @Test
-    public void testNotIncremental() {
-        helper.registerAllowedMethod("s3DoesObjectExist", [Map], { args ->
-            return false
-        })
-
-        super.testPipeline(
-            "tests/jenkins/jobs/BuildAssembleUpload_Jenkinsfile",
-            "tests/jenkins/jobs/BuildAssembleUpload_Jenkinsfile_not_incremental"
-        )
+        super.testPipeline("tests/jenkins/jobs/BuildAssembleUpload_Jenkinsfile")
     }
 }

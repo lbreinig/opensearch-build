@@ -6,7 +6,7 @@
 
 import os
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from test_workflow.integ_test.local_test_cluster_opensearch_dashboards import LocalTestClusterOpenSearchDashboards
 from test_workflow.integ_test.service import ServiceTerminationResult
@@ -22,8 +22,6 @@ class LocalTestClusterOpenSearchDashboardsTests(unittest.TestCase):
 
         mock_bundle_manifest_opensearch_dashboards = MagicMock()
         mock_bundle_manifest_opensearch_dashboards.build.version = "1.1.0"
-        mock_bundle_manifest_opensearch_dashboards.build.platform = "linux"
-        mock_bundle_manifest_opensearch_dashboards.build.architecture = "x64"
         self.mock_bundle_manifest_opensearch_dashboards = mock_bundle_manifest_opensearch_dashboards
 
         dependency_installer_opensearch = MagicMock()
@@ -83,8 +81,6 @@ class LocalTestClusterOpenSearchDashboardsTests(unittest.TestCase):
 
         mock_service_opensearch_dashboards.assert_called_once_with(
             "1.1.0",
-            "linux",
-            "x64",
             self.additional_cluster_config,
             self.security_enabled,
             self.dependency_installer_opensearch_dashboards,
@@ -122,7 +118,12 @@ class LocalTestClusterOpenSearchDashboardsTests(unittest.TestCase):
         )
 
         mock_log_files = MagicMock()
-        mock_service_opensearch_dashboards_object.terminate.return_value = ServiceTerminationResult(123, "test stdout_data", "test stderr_data", mock_log_files)
+        mock_service_opensearch_dashboards_object.terminate.return_value = ServiceTerminationResult(
+            123, "test stdout_data", "test stderr_data", mock_log_files)
+
+        mock_log_files_opensearch = MagicMock()
+        mock_service_opensearch_object.terminate.return_value = ServiceTerminationResult(
+            123, "test stdout_data", "test stderr_data", mock_log_files_opensearch)
 
         mock_test_result_data_object = MagicMock()
         mock_test_result_data.return_value = mock_test_result_data_object
@@ -132,16 +133,24 @@ class LocalTestClusterOpenSearchDashboardsTests(unittest.TestCase):
         mock_service_opensearch_object.terminate.assert_called_once()
         mock_service_opensearch_dashboards_object.terminate.assert_called_once()
 
-        mock_test_result_data.assert_called_once_with(
-            self.component_name,
-            self.component_test_config,
-            123,
-            "test stdout_data",
-            "test stderr_data",
-            mock_log_files
-        )
+        mock_test_result_data.assert_has_calls([
+            call(
+                self.component_name,
+                self.component_test_config,
+                123,
+                "test stdout_data",
+                "test stderr_data",
+                mock_log_files_opensearch
+            ),
+            call(self.component_name,
+                 self.component_test_config,
+                 123,
+                 "test stdout_data",
+                 "test stderr_data",
+                 mock_log_files)
+        ])
 
-        mock_local_cluster_logs.save_test_result_data.assert_called_once_with(mock_test_result_data_object)
+        self.assertEqual(mock_local_cluster_logs.save_test_result_data.call_count, 2)
 
     @patch("test_workflow.integ_test.local_test_cluster_opensearch_dashboards.ServiceOpenSearch")
     @patch("test_workflow.integ_test.local_test_cluster_opensearch_dashboards.ServiceOpenSearchDashboards")
