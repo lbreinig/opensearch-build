@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 ---
 schema-version: '1.0'
+=======
+>>>>>>> origin/main
 build:
   name: OpenSearch Dashboards
   version: 1.4.0
@@ -7,6 +10,13 @@ ci:
   image:
     name: opensearchstaging/ci-runner:centos7-x64-arm64-jdkmulti-node10.24.1-cypress6.9.1-20211028
 components:
+<<<<<<< HEAD
   - name: OpenSearch-Dashboards
     repository: https://github.com/opensearch-project/OpenSearch-Dashboards.git
     ref: 1.x
+=======
+- name: OpenSearch-Dashboards
+  ref: 1.x
+  repository: https://github.com/opensearch-project/OpenSearch-Dashboards.git
+schema-version: '1.0'
+>>>>>>> origin/main
