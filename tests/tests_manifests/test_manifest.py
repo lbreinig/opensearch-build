@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -43,10 +44,8 @@ class TestManifest(unittest.TestCase):
     def test_manifest_is_abstract(self) -> None:
         with self.assertRaises(TypeError) as context:
             Manifest(None)  # type: ignore[abstract]
-        self.assertEqual(
-            "Can't instantiate abstract class Manifest with abstract methods __init__",
-            context.exception.__str__(),
-        )
+        self.assertTrue(context.exception.__str__().startswith(
+            "Can't instantiate abstract class Manifest with abstract method"))
 
     def test_invalid_version_empty(self) -> None:
         manifest_path = os.path.join(self.data_path, "invalid-schema-version-empty.yml")
@@ -87,6 +86,17 @@ class TestManifest(unittest.TestCase):
             self.assertTrue(os.path.isfile(manifest_path))
             with open(output_path) as f:
                 self.assertEqual(yaml.safe_load(f), manifest.to_dict())
+
+    def test_to_file_formatted(self) -> None:
+        manifest_path = os.path.join(self.data_path, "min.yml")
+        manifest = TestManifest.SampleManifest.from_path(manifest_path)
+        with TemporaryDirectory() as path:
+            output_path = os.path.join(path.name, "manifest.yml")
+            manifest.to_file(output_path)
+            with open(output_path) as f:
+                written_manifest = f.read()
+
+        self.assertEqual("---\nschema-version: '1.0'\n", written_manifest)
 
     def test_invalid_version_no_value_3_14(self) -> None:
         manifest_path = os.path.join(self.data_path, "invalid-schema-version-no-value.yml")

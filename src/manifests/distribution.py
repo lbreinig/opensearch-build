@@ -1,10 +1,18 @@
+# Copyright OpenSearch Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# The OpenSearch Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
+
+
 import logging
 import urllib.request
 from typing import List
 
 
 class DistributionNotFound(Exception):
-    def __init__(self, urls: List[str]):
+    def __init__(self, urls: List[str]) -> None:
         self.urls = urls
         super().__init__(f"Unable to find a distribution under urls {self.urls}")
 

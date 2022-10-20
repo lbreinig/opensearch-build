@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -13,25 +14,16 @@ from manifests.input_manifest import InputComponentFromSource
 
 class TestCiCheckListsSource(unittest.TestCase):
     @patch("ci_workflow.ci_check_list_source.GitRepository")
-    def test_checkout(self, mock_git_repo):
-        component = InputComponentFromSource({
-            "name": "common-utils",
-            "repository": "url",
-            "ref": "ref"
-        })
+    def test_checkout(self, mock_git_repo: MagicMock) -> None:
+        component = InputComponentFromSource({"name": "common-utils", "repository": "url", "ref": "ref"})
         list = CiCheckListSource(component, MagicMock())
         list.checkout("path")
         mock_git_repo.assert_called()
 
     @patch("ci_workflow.ci_check_list_source.GitRepository")
     @patch("ci_workflow.ci_check_gradle_properties.PropertiesFile")
-    def test_check(self, mock_properties_file, mock_check, *mocks):
-        component = InputComponentFromSource({
-            "name": "common-utils",
-            "repository": "url",
-            "ref": "ref",
-            "checks": ["gradle:properties:version"]
-        })
+    def test_check(self, mock_properties_file: MagicMock, mock_check: MagicMock, *mocks: MagicMock) -> None:
+        component = InputComponentFromSource({"name": "common-utils", "repository": "url", "ref": "ref", "checks": ["gradle:properties:version"]})
         list = CiCheckListSource(component, MagicMock())
         list.checkout("path")
         list.check()
@@ -40,13 +32,8 @@ class TestCiCheckListsSource(unittest.TestCase):
         mock_properties_file.assert_called()
 
     @patch("ci_workflow.ci_check_list_source.GitRepository")
-    def test_invalid_check(self, *mocks):
-        component = InputComponentFromSource({
-            "name": "common-utils",
-            "repository": "url",
-            "ref": "ref",
-            "checks": ["invalid:check"]
-        })
+    def test_invalid_check(self, *mocks: MagicMock) -> None:
+        component = InputComponentFromSource({"name": "common-utils", "repository": "url", "ref": "ref", "checks": ["invalid:check"]})
         list = CiCheckListSource(component, MagicMock())
         list.checkout("path")
         with self.assertRaises(CiCheckListSource.InvalidCheckError) as ctx:

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -100,5 +101,5 @@ docker buildx ls | grep $BUILDER_NAME
 docker ps | grep $BUILDER_NAME
 
 # Build multi-arch images
-docker buildx build --platform linux/amd64,linux/arm64 -t opensearchstaging/ci-runner:${TAG_NAME} -f $DOCKERFILE --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t "opensearchstaging/ci-runner:${TAG_NAME}" -f "${DOCKERFILE}" --push .
 

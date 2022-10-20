@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -69,5 +70,3 @@ fi
 
 ## Setup Performance Analyzer Agent
 mv $OUTPUT/plugins/opensearch-performance-analyzer/performance-analyzer-rca $OUTPUT/
-mv $OUTPUT/bin/opensearch-performance-analyzer/performance-analyzer-agent-cli $OUTPUT/bin
-rm -rf $OUTPUT/bin/opensearch-performance-analyzer

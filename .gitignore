@@ -12,6 +12,7 @@ __pycache__
 
 .coverage
 coverage.xml
+coverage/
 
 .gradle/
 .settings/
@@ -22,6 +23,10 @@ out.txt
 /dist/
 /test-results/
 
+/rpm/
+/tar/
+/zip/
+
 /.vscode/
 
 .project
@@ -29,4 +34,4 @@ out.txt
 /bin/
 
 /manifests/**/*.yml.lock
-
+vars/

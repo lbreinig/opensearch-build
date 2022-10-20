@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -13,7 +14,7 @@ from paths.assemble_output_dir import AssembleOutputDir
 class AssembleOutputDirTests(unittest.TestCase):
 
     @patch("paths.output_dir.os")
-    def test(self, mock_os):
+    def test(self, mock_os: MagicMock) -> None:
 
         mock_cwd = MagicMock()
         mock_os.getcwd.return_value = mock_cwd
@@ -21,10 +22,11 @@ class AssembleOutputDirTests(unittest.TestCase):
         mock_dir = MagicMock()
         mock_os.path.join.return_value = mock_dir
 
-        AssembleOutputDir("opensearch", makedirs=True)
+        AssembleOutputDir("opensearch", "tar", makedirs=True)
 
         mock_os.path.join.assert_called_once_with(
             mock_cwd,
+            "tar",
             "dist",
             "opensearch"
         )
@@ -32,7 +34,7 @@ class AssembleOutputDirTests(unittest.TestCase):
         mock_os.makedirs.assert_called_once_with(mock_dir, exist_ok=True)
 
     @patch("paths.output_dir.os")
-    def test_opensearch_dashboards(self, mock_os):
+    def test_opensearch_dashboards(self, mock_os: MagicMock) -> None:
 
         mock_cwd = MagicMock()
         mock_os.getcwd.return_value = mock_cwd
@@ -40,10 +42,11 @@ class AssembleOutputDirTests(unittest.TestCase):
         mock_dir = MagicMock()
         mock_os.path.join.return_value = mock_dir
 
-        AssembleOutputDir("opensearch-dashboards", makedirs=True)
+        AssembleOutputDir("opensearch-dashboards", "tar", makedirs=True)
 
         mock_os.path.join.assert_called_once_with(
             mock_cwd,
+            "tar",
             "dist",
             "opensearch-dashboards"
         )
@@ -51,14 +54,15 @@ class AssembleOutputDirTests(unittest.TestCase):
         mock_os.makedirs.assert_called_once_with(mock_dir, exist_ok=True)
 
     @patch("paths.output_dir.os")
-    def test_with_cwd(self, mock_os):
+    def test_with_cwd(self, mock_os: MagicMock) -> None:
         mock_dir = MagicMock()
         mock_os.path.join.return_value = mock_dir
 
-        AssembleOutputDir("opensearch", cwd="test_cwd", makedirs=False)
+        AssembleOutputDir("opensearch", "tar", cwd="test_cwd", makedirs=False)
 
         mock_os.path.join.assert_called_once_with(
             "test_cwd",
+            "tar",
             "dist",
             "opensearch"
         )

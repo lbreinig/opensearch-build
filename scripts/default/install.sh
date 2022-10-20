@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -21,7 +22,7 @@ function usage() {
     echo -e "-h help"
 }
 
-while getopts ":h:v:s:o:p:a:f:" arg; do
+while getopts ":h:v:q:s:o:p:a:f:" arg; do
     case $arg in
         h)
             usage
@@ -29,6 +30,9 @@ while getopts ":h:v:s:o:p:a:f:" arg; do
             ;;
         v)
             VERSION=$OPTARG
+            ;;
+        q)
+            QUALIFIER=$OPTARG
             ;;
         s)
             SNAPSHOT=$OPTARG

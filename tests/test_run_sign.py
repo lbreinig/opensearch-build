@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -6,7 +7,8 @@
 
 import os
 import unittest
-from unittest.mock import MagicMock, call, patch
+from typing import Any
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -15,11 +17,11 @@ from run_sign import main
 
 class TestRunSign(unittest.TestCase):
     @pytest.fixture(autouse=True)
-    def capfd(self, capfd):
+    def _capfd(self, capfd: Any) -> None:
         self.capfd = capfd
 
     @patch("argparse._sys.argv", ["run_sign.py", "--help"])
-    def test_usage(self, *mocks):
+    def test_usage(self, *mocks: Any) -> None:
         with self.assertRaises(SystemExit):
             main()
 
@@ -30,25 +32,10 @@ class TestRunSign(unittest.TestCase):
 
     BUILD_MANIFEST = os.path.join(DATA_PATH, "opensearch-build-1.1.0.yml")
 
-    @patch("os.getcwd", return_value="curdir")
     @patch("argparse._sys.argv", ["run_sign.py", BUILD_MANIFEST])
-    @patch("run_sign.Signer", return_value=MagicMock())
-    def test_main(self, mock_signer, *mocks):
+    @patch("run_sign.SignArtifacts")
+    def test_main(self, mock_sign_artifacts: Mock, *mocks: Any) -> None:
         main()
 
-        self.assertEqual(mock_signer.return_value.sign_artifacts.call_count, 21)
-        mock_signer.return_value.sign_artifacts.assert_has_calls(
-            [
-                call(
-                    [
-                        "maven/org/opensearch/common-utils/maven-metadata-local.xml",
-                        "maven/org/opensearch/common-utils/1.1.0.0/common-utils-1.1.0.0-javadoc.jar",
-                        "maven/org/opensearch/common-utils/1.1.0.0/common-utils-1.1.0.0-sources.jar",
-                        "maven/org/opensearch/common-utils/1.1.0.0/common-utils-1.1.0.0.pom",
-                        "maven/org/opensearch/common-utils/1.1.0.0/common-utils-1.1.0.0.jar",
-                    ],
-                    self.DATA_PATH,
-                )
-            ]
-        )
-        mock_signer.return_value.sign_artifacts.assert_has_calls([call(["plugins/opensearch-index-management-1.1.0.0.zip"], self.DATA_PATH)])
+        mock_sign_artifacts.from_path.assert_called_once()
+        mock_sign_artifacts.from_path.return_value.sign.assert_called_once()

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -16,8 +17,11 @@ case $1 in
   "bwc-test")
   "$DIR/run.sh" "$DIR/src/run_bwc_test.py" "${@:2}"
   ;;
+  "perf-test")
+  "$DIR/run.sh" "$DIR/src/run_perf_test.py" "${@:2}"
+  ;;
   *)
-  echo "Invalid test suite, run ./test.sh integ-test|bwc-test."
+  echo "Invalid test suite, run ./test.sh integ-test|bwc-test|perf-test."
   exit 1
   ;;
 esac

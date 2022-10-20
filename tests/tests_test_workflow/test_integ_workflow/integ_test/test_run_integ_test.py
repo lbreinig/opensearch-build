@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -6,6 +7,7 @@
 
 import os
 import unittest
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from manifests.test_manifest import TestManifest
@@ -23,7 +25,7 @@ class TestRunIntegTest(unittest.TestCase):
             "--paths",
             "opensearch=" + os.path.join(os.path.dirname(__file__), "..", "..", "data", "remote")
         ])
-    def test_run_integ_test(self, *mock):
+    def test_run_integ_test(self, *mock: Any) -> None:
 
         mock_runner = MagicMock()
         mock_result = MagicMock()
@@ -32,7 +34,7 @@ class TestRunIntegTest(unittest.TestCase):
         mock_runner.run.return_value = mock_result
         mock_from_test_manifest = MagicMock()
         mock_from_test_manifest.return_value = mock_runner
-        IntegTestRunners.from_test_manifest = mock_from_test_manifest
+        IntegTestRunners.from_test_manifest = mock_from_test_manifest  # type: ignore
 
         main()
 

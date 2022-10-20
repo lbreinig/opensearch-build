@@ -1,10 +1,9 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
 # this file be licensed under the Apache-2.0 license or a
 # compatible open source license.
-
-from typing import Any
 
 from manifests.component_manifest import Component, ComponentManifest, Components
 
@@ -59,7 +58,7 @@ class BundleManifest_1_0(ComponentManifest['BundleManifest_1_0', 'BundleComponen
         },
     }
 
-    def __init__(self, data: Any):
+    def __init__(self, data: dict) -> None:
         super().__init__(data)
         self.build = self.Build(data["build"])
         self.components = BundleComponents_1_0(data.get("components", []))  # type: ignore[assignment]
@@ -72,7 +71,7 @@ class BundleManifest_1_0(ComponentManifest['BundleManifest_1_0', 'BundleComponen
         }
 
     class Build:
-        def __init__(self, data: Any):
+        def __init__(self, data: dict) -> None:
             self.name = data["name"]
             self.version = data["version"]
             self.architecture = data["architecture"]
@@ -91,12 +90,12 @@ class BundleManifest_1_0(ComponentManifest['BundleManifest_1_0', 'BundleComponen
 
 class BundleComponents_1_0(Components):
     @classmethod
-    def __create__(self, data: Any) -> 'BundleComponent_1_0':
+    def __create__(self, data: dict) -> 'BundleComponent_1_0':
         return BundleComponent_1_0(data)
 
 
 class BundleComponent_1_0(Component):
-    def __init__(self, data: Any):
+    def __init__(self, data: dict) -> None:
         super().__init__(data)
         self.repository = data["repository"]
         self.ref = data["ref"]

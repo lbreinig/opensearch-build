@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -16,7 +17,7 @@ from manifests.build_manifest import BuildManifest
 
 
 class BuildRecorder:
-    def __init__(self, target: BuildTarget):
+    def __init__(self, target: BuildTarget) -> None:
         self.build_manifest = self.BuildManifestBuilder(target)
         self.target = target
         self.name = target.name
@@ -52,7 +53,7 @@ class BuildRecorder:
         logging.info(f"Created build manifest {manifest_path}")
 
     class BuildManifestBuilder:
-        def __init__(self, target: BuildTarget):
+        def __init__(self, target: BuildTarget) -> None:
             self.data: Dict[str, Any] = {}
             self.data["build"] = {}
             self.data["build"]["id"] = target.build_id

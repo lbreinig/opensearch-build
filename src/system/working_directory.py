@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -6,12 +7,14 @@
 
 import os
 from contextlib import contextmanager
+from typing import Generator
 
 
 @contextmanager
-def WorkingDirectory(path):
+def WorkingDirectory(path: str) -> Generator[None, None, None]:
     try:
         saved_path = os.getcwd()
-        yield os.chdir(path)
+        os.chdir(path)
+        yield
     finally:
         os.chdir(saved_path)

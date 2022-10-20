@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -18,7 +19,7 @@ from paths.script_finder import ScriptFinder
 class TestBuilderFromSource(unittest.TestCase):
     def setUp(self) -> None:
         self.builder = BuilderFromSource(
-            InputComponentFromSource({"name": "common-utils", "repository": "url", "ref": "ref"}),
+            InputComponentFromSource({"name": "sample_component", "repository": "url", "ref": "ref"}),
             BuildTarget(
                 name="OpenSearch",
                 version="1.1.0",
@@ -28,8 +29,44 @@ class TestBuilderFromSource(unittest.TestCase):
             ),
         )
 
+        self.builder_distribution = BuilderFromSource(
+            InputComponentFromSource({"name": "OpenSearch", "repository": "url", "ref": "ref"}),
+            BuildTarget(
+                name="OpenSearch",
+                version="1.3.0",
+                platform="linux",
+                architecture="x64",
+                distribution="tar",
+                snapshot=False,
+            ),
+        )
+
+        self.builder_distribution_support = BuilderFromSource(
+            InputComponentFromSource({"name": "sample_component", "repository": "url", "ref": "ref"}),
+            BuildTarget(
+                name="OpenSearch",
+                version="1.3.0",
+                platform="linux",
+                architecture="x64",
+                distribution="rpm",
+                snapshot=False,
+            ),
+        )
+
+        self.builder_distribution_support_component_not_found = BuilderFromSource(
+            InputComponentFromSource({"name": "not_found_component", "repository": "url", "ref": "ref"}),
+            BuildTarget(
+                name="OpenSearch",
+                version="1.3.0",
+                platform="linux",
+                architecture="x64",
+                distribution="rpm",
+                snapshot=False,
+            ),
+        )
+
     def test_builder(self) -> None:
-        self.assertEqual(self.builder.component.name, "common-utils")
+        self.assertEqual(self.builder.component.name, "sample_component")
 
     @patch("build_workflow.builder_from_source.GitRepository")
     def test_build(self, mock_git_repo: Mock) -> None:
@@ -41,7 +78,7 @@ class TestBuilderFromSource(unittest.TestCase):
             " ".join(
                 [
                     "bash",
-                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "common-utils", "build.sh")),
+                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "sample_component", "build.sh")),
                     "-v 1.1.0",
                     "-p linux",
                     "-a x64",
@@ -50,7 +87,50 @@ class TestBuilderFromSource(unittest.TestCase):
                 ]
             )
         )
-        build_recorder.record_component.assert_called_with("common-utils", mock_git_repo.return_value)
+        build_recorder.record_component.assert_called_with("sample_component", mock_git_repo.return_value)
+
+    @patch("build_workflow.builder_from_source.GitRepository")
+    def test_build_distribution(self, mock_git_repo: Mock) -> None:
+        mock_git_repo.return_value = MagicMock(working_directory="dir")
+        build_recorder = MagicMock()
+        self.builder_distribution.checkout("dir")
+        self.builder_distribution.build(build_recorder)
+        mock_git_repo.return_value.execute.assert_called_with(
+            " ".join(
+                [
+                    "bash",
+                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "OpenSearch", "build.sh")),
+                    "-v 1.3.0",
+                    "-p linux",
+                    "-a x64",
+                    "-d tar",
+                    "-s false",
+                    "-o builds",
+                ]
+            )
+        )
+        build_recorder.record_component.assert_called_with("OpenSearch", mock_git_repo.return_value)
+
+    @patch("build_workflow.builder_from_source.GitRepository")
+    def test_build_distribution_support(self, mock_git_repo: Mock) -> None:
+        mock_git_repo.return_value = MagicMock(working_directory="dir")
+        build_recorder = MagicMock()
+        self.builder_distribution_support.checkout("dir")
+        self.builder_distribution_support.build(build_recorder)
+        mock_git_repo.return_value.execute.assert_called_with(
+            " ".join(
+                [
+                    "bash",
+                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "sample_component", "build.sh")),
+                    "-v 1.3.0",
+                    "-p linux",
+                    "-a x64",
+                    "-s false",
+                    "-o builds",
+                ]
+            )
+        )
+        build_recorder.record_component.assert_called_with("sample_component", mock_git_repo.return_value)
 
     @patch("build_workflow.builder_from_source.GitRepository")
     def test_build_snapshot(self, mock_git_repo: Mock) -> None:
@@ -63,7 +143,7 @@ class TestBuilderFromSource(unittest.TestCase):
             " ".join(
                 [
                     "bash",
-                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "common-utils", "build.sh")),
+                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "sample_component", "build.sh")),
                     "-v 1.1.0",
                     "-p linux",
                     "-a x64",
@@ -72,7 +152,55 @@ class TestBuilderFromSource(unittest.TestCase):
                 ]
             )
         )
-        build_recorder.record_component.assert_called_with("common-utils", self.builder.git_repo)
+        build_recorder.record_component.assert_called_with("sample_component", self.builder.git_repo)
+
+    @patch("build_workflow.builder_from_source.GitRepository")
+    def test_build_snapshot_qualifier(self, mock_git_repo: Mock) -> None:
+        self.builder.target.snapshot = True
+        self.builder.target.qualifier = "alpha1"
+        mock_git_repo.return_value = MagicMock(working_directory="dir")
+        build_recorder = MagicMock()
+        self.builder.checkout("dir")
+        self.builder.build(build_recorder)
+        mock_git_repo.return_value.execute.assert_called_with(
+            " ".join(
+                [
+                    "bash",
+                    os.path.realpath(os.path.join(ScriptFinder.component_scripts_path, "sample_component", "build.sh")),
+                    "-v 1.1.0",
+                    "-q alpha1",
+                    "-p linux",
+                    "-a x64",
+                    "-s true",
+                    "-o builds",
+                ]
+            )
+        )
+        build_recorder.record_component.assert_called_with("sample_component", self.builder.git_repo)
+
+    @patch("build_workflow.builder_from_source.GitRepository")
+    def test_build_snapshot_qualifier_component_not_found(self, mock_git_repo: Mock) -> None:
+        self.builder_distribution_support_component_not_found.target.snapshot = True
+        self.builder_distribution_support_component_not_found.target.qualifier = "alpha1"
+        mock_git_repo.return_value = MagicMock(working_directory="dir")
+        build_recorder = MagicMock()
+        self.builder_distribution_support_component_not_found.checkout("dir")
+        self.builder_distribution_support_component_not_found.build(build_recorder)
+        mock_git_repo.return_value.execute.assert_called_with(
+            " ".join(
+                [
+                    "bash",
+                    os.path.realpath(os.path.join(ScriptFinder.default_scripts_path, "opensearch", "build.sh")),
+                    "-v 1.3.0",
+                    "-q alpha1",
+                    "-p linux",
+                    "-a x64",
+                    "-s true",
+                    "-o builds",
+                ]
+            )
+        )
+        build_recorder.record_component.assert_called_with("not_found_component", mock_git_repo.return_value)
 
     def mock_os_walk(self, artifact_path: str) -> List[Any]:
         if artifact_path.endswith(os.path.join("dir", "builds", "core-plugins")):
@@ -94,7 +222,7 @@ class TestBuilderFromSource(unittest.TestCase):
         build_recorder.record_artifact.assert_has_calls(
             [
                 call(
-                    "common-utils",
+                    "sample_component",
                     "maven",
                     os.path.relpath(
                         os.path.join("maven", "artifact1.jar"),
@@ -103,7 +231,7 @@ class TestBuilderFromSource(unittest.TestCase):
                     os.path.join("maven", "artifact1.jar"),
                 ),
                 call(
-                    "common-utils",
+                    "sample_component",
                     "core-plugins",
                     os.path.relpath(
                         os.path.join("core-plugins", "plugin1.zip"),

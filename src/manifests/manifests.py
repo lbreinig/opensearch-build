@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -16,7 +17,7 @@ T = TypeVar('T', bound='Manifest')
 
 
 class Manifests(SortedDict, Generic[T]):
-    def __init__(self, klass: Any, files: List[str]):
+    def __init__(self, klass: Any, files: List[str]) -> None:
         super(Manifests, self).__init__()
         self.klass = klass
         self.__append__(files)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -13,7 +14,7 @@ from test_workflow.integ_test.integ_test_runners import IntegTestRunners
 from test_workflow.test_args import TestArgs
 
 
-def main():
+def main() -> int:
     args = TestArgs()
 
     # Any logging.info call preceding to next line in the execution chain will make the console output not displaying logs in console.
@@ -26,7 +27,9 @@ def main():
     all_results.log()
 
     if all_results.failed():
-        sys.exit(1)
+        return 1
+    else:
+        return 0
 
 
 if __name__ == "__main__":

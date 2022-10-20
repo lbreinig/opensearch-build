@@ -1,7 +1,9 @@
+---
 coverage:
   status:
     project:
       default:
         target: 98%
 ignore:
-  - "**/tests/*.py" 
+  - '**/tests/*.py'
+  - '**/test/*.js'

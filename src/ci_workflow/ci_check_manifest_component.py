@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -14,10 +15,10 @@ from manifests.build_manifest import BuildManifest
 
 class CiCheckManifestComponent(CiCheckDist):
     class MissingComponentError(Exception):
-        def __init__(self, component, url):
+        def __init__(self, component: str, url: str) -> None:
             super().__init__(f"Missing {component} in {url}.")
 
-    def check(self):
+    def check(self) -> None:
         for architecture in BuildArgs.SUPPORTED_ARCHITECTURES:
             # Since we only have 'linux' builds now we hard code it to 'linux'
             # Once we have all platform builds on S3 we can then add a second loop for 'BuildArgs.SUPPORTED_PLATFORMS'

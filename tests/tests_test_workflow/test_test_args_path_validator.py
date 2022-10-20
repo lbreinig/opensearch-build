@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -12,7 +13,7 @@ from test_workflow.test_args_path_validator import TestArgsPathValidator
 
 
 class TestTestArgsPathValidator(unittest.TestCase):
-    def test(self):
+    def test(self) -> None:
         self.assertEqual(
             TestArgsPathValidator.validate("https://ci.opensearch.org/ci/dbc/bundle-build-dashboards/1.2.0/428"),
             "https://ci.opensearch.org/ci/dbc/bundle-build-dashboards/1.2.0/428"

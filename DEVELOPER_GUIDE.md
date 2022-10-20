@@ -20,6 +20,7 @@
     - [Run Tests](#run-tests-1)
       - [Regression Tests](#regression-tests)
       - [Testing in Jenkins](#testing-in-jenkins)
+      - [Integ Tests in Jenkins](#integ-tests-in-jenkins)
 
 # Developer Guide
 
@@ -29,7 +30,7 @@ Fork this repository on GitHub, and clone locally with `git clone`.
 
 ## Build Tools
 
-This project contains a collection of tools to build, test and release OpenSearch and OpenSearch Dashboards. 
+This project contains a collection of tools to build, test and release OpenSearch and OpenSearch Dashboards.
 
 ### Install Prerequisites
 
@@ -72,11 +73,17 @@ On Windows, run `pyenv rehash` if `pipenv` cannot be found. This rehashes pyenv 
 
 #### NVM and Node
 
-Install [nvm](https://github.com/nvm-sh/nvm/blob/master/README.md) to use the Node 10.24.1 version as it is required
+Install [nvm](https://github.com/nvm-sh/nvm/blob/master/README.md) to use the Node 14.18.2 version as it is required
 
 ```
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
-nvm install v10.24.1
+nvm install v14.18.2
+```
+
+Add the lines below to the correct profile file (`~/.zshrc`, `~/.bashrc`, etc.).
+```
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 ```
 
 #### Yarn
@@ -89,7 +96,7 @@ npm install -g yarn
 
 ### Install Dependencies
 
-Install dependencies. 
+Install dependencies.
 
 ```
 $ pipenv install
@@ -134,7 +141,7 @@ build.sh: error: the following arguments are required: manifest
 
 ### Code Linting
 
-This project uses a [pre-commit hook](https://pre-commit.com/) for linting Python code.
+This project uses a [pre-commit hook](https://pre-commit.com/) for linting Python code and YAML files.
 
 ```
 $ pipenv run pre-commit install
@@ -142,7 +149,7 @@ $ pipenv run pre-commit run --all-files
 ```
 Pre-commit hook will run isort, flake8, mypy and pytest before making a commit.
 
-This project uses [isort](https://github.com/PyCQA/isort) to ensure that imports are sorted, and [flake8](https://flake8.pycqa.org/en/latest/) to enforce code style. 
+This project uses [isort](https://github.com/PyCQA/isort) to ensure that imports are sorted, and [flake8](https://flake8.pycqa.org/en/latest/) to enforce code style.
 
 ```
 $ pipenv run flake8
@@ -164,7 +171,15 @@ All done! ✨ 🍰 ✨
 23 files left unchanged.
 ```
 
-If your code isn't properly formatted, don't worry, [a CI workflow](./github/workflows/tests.yml) will make sure to remind you. 
+This project uses [yamllint](https://yamllint.readthedocs.io/) to enforce formatting in YAML files.
+
+Use [yamlfix](https://github.com/lyz-code/yamlfix) to auto-format your YAML files.
+
+```
+$ git status -s | grep -e "[MA?]\s.*.y[a]*ml" | xargs pipenv run yamlfix 
+```
+
+If your code isn't properly formatted, don't worry, [a CI workflow](./github/workflows/tests.yml) will make sure to remind you.
 
 ### Type Checking
 
@@ -226,17 +241,78 @@ BUILD SUCCESSFUL in 7s
 
 #### Regression Tests
 
-Jenkins workflow regression tests typically output a .txt file into [tests/jenkins/jobs](tests/jenkins/jobs). For example, [TestHello.groovy](tests/jenkins/TestHello.groovy) executes [Hello_Jenkinsfile](tests/jenkins/jobs/Hello_Jenkinsfile) and outputs [Hello_Jenkinsfile.txt](tests/jenkins/jobs/Hello_Jenkinsfile.txt). If the job execution changes, the regression test will fail. To update the recorded .txt file run `./gradlew test -info -Ppipeline.stack.write=true` or update its value in [gradle.properties](gradle.properties).
+Jenkins workflow regression tests typically output a .txt file into [tests/jenkins/jobs](tests/jenkins/jobs).
+For example, [TestHello.groovy](tests/jenkins/TestHello.groovy) executes [Hello_Jenkinsfile](tests/jenkins/jobs/Hello_Jenkinsfile)
+and outputs [Hello_Jenkinsfile.txt](tests/jenkins/jobs/Hello_Jenkinsfile.txt). If the job execution changes, the regression test will fail.
+
+- To update the recorded .txt file run `./gradlew test -info -Ppipeline.stack.write=true` or update its value in [gradle.properties](gradle.properties).
+
+- To run a specific test case, run `./gradlew test -info --tests=TestCaseClassName`
+
+#### Tests for jenkins job
+Each jenkins job should have a test case associated with it. 
+Eg: [TestSignStandaloneArtifactsJob.groovy](tests/jenkins/TestSignStandaloneArtifactsJob.groovy)
+- Save the regression file for the `jenkins-job` in `tests/jenkins/jenkinsjob-regression-files/<job-name>/<job-filename>`
+- All tests for jenkins job should extend [BuildPipelineTest.groovy](tests/jenkins/BuildPipelineTest.groovy)
+- All tests should have a `setUp()` which is used to set the variables associated with the job
+- Add setups for all libraries used in the job using `this.registerLibTester` with appropriate values
+(Eg: [TestDataPrepperReleaseArtifacts](tests/jenkins/TestDataPrepperReleaseArtifacts.groovy)) in `setUp()` before `super.setUp()` is called.
+
+#### Tests for jenkins libraries
+
+##### Lib Tester
+Each jenkins library should have a lib tester associated with it. Eg: [SignArtifactsLibTester](tests/jenkins/lib-testers/SignArtifactsLibTester.groovy)
+- Library tester should extend [LibFunctionTester.groovy](tests/jenkins/LibFunctionTester.groovy)
+- implement `void configure(helper, bindings)` method which sets up all the variables used in the library
+  - Note: This will not include the variables set using function arguments
+- implement `void libFunctionName()`. This function will contain the name of function.
+- implement `void parameterInvariantsAssertions()`. This function will contain assertions verifying the type and 
+accepted values for the function parameters
+- implement `void expectedParametersMatcher()`. This function will match args called in the job to expected values from 
+the test
+
+##### Library Test Case
+Each jenkins library should have a test case associated with it. Eg: [TestSignArtifacts](tests/jenkins/TestSignArtifacts.groovy) <br>
+- Jenkins' library test should extend [BuildPipelineTest.groovy](tests/jenkins/BuildPipelineTest.groovy)
+- Create a dummy job such as [Hello_Jenkinsfile](tests/jenkins/jobs/Hello_Jenkinsfile) to call and test the function
+  and output [Hello_Jenkinsfile.txt](tests/jenkins/jobs/Hello_Jenkinsfile.txt)
+- If using remote libs from [opensearch-build-libraries](https://github.com/opensearch-project/opensearch-build-libraries) repository with tag (ex: 1.0.0), make sure
+  both the Jenkins Test file as well as the Jenkins Job file are overriding the libs version with the same tag (ex: 1.0.0), or Jacoco test will fail to generate reports.
+  This would happen if defaultVersion in BuildPipelineTest.groovy (default to 'main') have a different HEAD commit id compares to tag commit id you defined to use.
+```
+super.setUp()
+......
+helper.registerSharedLibrary(
+    library().name('jenkins')
+        .defaultVersion('1.0.0')
+        .allowOverride(true)
+        .implicit(true)
+        .targetPath('vars')
+        .retriever(gitSource('https://github.com/opensearch-project/opensearch-build-libraries.git'))
+        .build()
+)
+```
+
+```
+lib = library(identifier: 'jenkins@1.0.4', retriever: modernSCM([
+    $class: 'GitSCMSource',
+    remote: 'https://github.com/opensearch-project/opensearch-build-libraries.git',
+]))
+```
 
 #### Testing in Jenkins
-
 * [Build_OpenSearch_Dashboards_Jenkinsfile](tests/jenkins/jobs/Build_OpenSearch_Dashboards_Jenkinsfile): is similar to [OpenSearch Dashboards Jenkinsfile](jenkins/opensearch-dashboards/Jenkinsfile) w/o notifications.
- 
+
 Make your code changes in a branch, e.g. `jenkins-changes`, including to any of the above jobs. Create a pipeline in Jenkins with the following settings.
- 
+
 * GitHub Project: `https://github.com/[your username]/opensearch-build/`.
 * Pipeline repository URL: `https://github.com/[your username]/opensearch-build`.
 * Branch specifier: `refs/heads/jenkins-changes`.
 * Script path: `tests/jenkins/jobs/Build_DryRun_Jenkinsfile`
 
 You can now iterate by running the job in Jenkins, examining outputs, and pushing updates to GitHub.
+
+#### Integ Tests in Jenkins
+- Opensearch bundle build executes the integration tests for the opensearch as well as plugins. 
+- To add integ tests for a new plugin, add the plugin in the latest version [test manifest](manifests/2.0.0/opensearch-2.0.0-test.yml).
+- The test execution is triggered by the [integtest.sh](scripts/default/integtest.sh). In case a custom implementation is required, plugin owner can add that script in their own repo and [script_finder](src/paths/script_finder.py) will pick that up over the default script.

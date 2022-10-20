@@ -1,3 +1,4 @@
+# Copyright OpenSearch Contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # The OpenSearch Contributors require contributions made to
@@ -13,5 +14,5 @@ from assemble_workflow.bundle_url_location import BundleUrlLocation
 class BundleLocations:
 
     @classmethod
-    def from_path(cls, url_path: str, file_path: str, filename: str) -> BundleLocation:
-        return BundleUrlLocation(url_path, filename) if url_path else BundleFileLocation(file_path, filename)
+    def from_path(cls, url_path: str, file_path: str, filename: str, distribution: str) -> BundleLocation:
+        return BundleUrlLocation(url_path, filename, distribution) if url_path else BundleFileLocation(file_path, filename, distribution)
